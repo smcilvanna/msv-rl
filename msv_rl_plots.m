@@ -1,6 +1,61 @@
 %% Plots
 
 
+%% Plot alldata position
+
+if exist("plot.gif","file")
+    input("plot.gif file already exists, Ctrl + c to exit, ENTER to overwrite")
+    delete("plot.gif")
+end
+
+for i = 1:size(allData,1)
+    out = allData(i);
+    fig = plotPosition(out);   
+    exportgraphics(fig, "plot.gif", Append=true);
+    print(i);
+end
+
+
+
+
+
+
+
+%% Position Plot (moved to fn)
+close all;
+clk     = squeeze(out.tout);
+states  = squeeze(out.states.Data)';
+x = states(:,1); y = states(:,2); z = states(:,3);
+
+figure(1);
+ax1 = gca;
+
+plot(x,y, LineWidth=2, DisplayName="msv trajectory")
+hold on
+scatter(goal(1), goal(2), 100, Marker="x", LineWidth=4, DisplayName="Goal");
+xlabel("x(m)");
+ylabel("y(m)");
+axis("equal")
+
+figure(2);
+ax2 = gca;
+
+plot(clk, z, DisplayName="msv yaw", Color=[0.5 0.5 0.1], LineWidth=2);
+xlabel("Time (s)")
+legend
+
+
+
+fig3 = figure();
+tcl=tiledlayout(2,1);
+ax1.Parent=tcl;
+ax1.Layout.Tile=1;
+legend
+ax2.Parent=tcl;
+ax2.Layout.Tile=2;
+legend
+close(1)
+close(2)
 
 %% Velocity Plot
 

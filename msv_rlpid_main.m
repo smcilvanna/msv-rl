@@ -2,77 +2,21 @@ cd("C:\Users\14244039\OneDrive - Queen's University Belfast\Documents\MATLAB\rl\
 disp("This section prevents the [RUN] button working - run by section ")
 return
 disp("This section prevents the [RUN] button working - run by section ")
-%% MSV PID-RL - Initial Setup
+%%
 
 open("msv_rl.slx");
-addpath("./.fn/");
-modeSel("pid-rl");
-map = createMap();
-test = 1;
-[msv_start, goal] = randomStart(test); % set test =0 for random start, =1 for fixed
+addpath("./.fn/")
+
+%% Create a variable in matlab that will be used by simulink block for the robot visualiser map
+
+map = createMap()
+
+%% Random Start Function
+
+test = 1    % set test =0 for random start, =1 for fixed
+[msv_start, goal] = randomStart(test);
+
 kpid = [ 2 ; 0 ; 0 ];
-
-
-%% 
-
-close all;
-allData = [];
-
-kp = 0 :0.5: 30 ;   kp(1) = 0.2;
-ki = 0 :0.5: 30 ;   ki(1) = 0.2;
-kd = 0 :0.1: 5  ;   kd(1) = 0.05;
-
-runs = size(kp,2)*size(ki,2)*size(kd,2);
-
-disp("Total Runs = " + runs)
-disp("Starting...")
-pause(2)
-
-set_param("msv_rl","FastRestart","on");
-
-for p = 1:size(kp,2)
-for i = 1:size(ki,2)
-for d = 1:size(kd,2)
-
-    kpid    = [kp(p) ; ki(i) ; kd(d)];
-    out     = sim("msv_rl.slx");
-    allData = [allData ; out];
-
-    disp(kpid);
-
-end
-end
-end
-
-set_param("msv_rl","FastRestart","off");
-clearvars kp ki kd p i d runs
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 %% SETUP ENVIRONMENT
 
