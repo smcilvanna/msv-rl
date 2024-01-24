@@ -1,7 +1,13 @@
-cd("C:\Users\14244039\OneDrive - Queen's University Belfast\Documents\MATLAB\rl\msv_rl_ctrl");
-disp("This section prevents the [RUN] button working - run by section ")
+try
+    cd("C:\Users\14244039\OneDrive - Queen's University Belfast\Documents\MATLAB\rl\msv_rl_ctrl"); % windows
+catch
+    cd('/home/sm/matlab/github/msv-rl/'); % linux
+end
+
+disp("This section prevents the [RUN] button working - run script sections only")
 return
-disp("This section prevents the [RUN] button working - run by section ")
+x=0;
+%%
 %%
 
 open("msv_rl.slx");
