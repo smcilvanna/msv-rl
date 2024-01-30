@@ -14,7 +14,7 @@ function [msv_start, goal] = randomStart(test)
         goal = reshape(goal,[3,1]);
     else
         msv_start   = [0 ; 0 ; 0];
-        goal        = [5 ; 1 ; 0];
+        goal        = [5 ; 0 ; 0];
     end
 
 

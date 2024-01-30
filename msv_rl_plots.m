@@ -1,5 +1,6 @@
 %% Plots
 
+load("/home/sm/matlab/.data/msv-rl/msvrlpid1.mat");
 
 %% Plot alldata position
 
@@ -8,11 +9,16 @@ if exist("plot.gif","file")
     delete("plot.gif")
 end
 
-for i = 1:size(allData,1)
-    out = allData(i);
-    fig = plotPosition(out);   
+n = 20 ; % print top n reward results
+
+
+rewardTable = sortReward(allData);
+
+for i = 1:n
+    out = allData(rewardTable(i,1));
+    fig = plotPosition(out,0,rewardTable(i,2));   
     exportgraphics(fig, "plot.gif", Append=true);
-    print(i);
+    disp(i);
 end
 
 

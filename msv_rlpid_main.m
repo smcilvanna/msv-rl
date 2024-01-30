@@ -8,23 +8,92 @@ disp("This section prevents the [RUN] button working - run script sections only"
 return
 x=0;
 %%
-%%
+
+%% Section 1 - Parameter Sweep
 
 open("msv_rl.slx");
-addpath("./.fn/")
-
-%% Create a variable in matlab that will be used by simulink block for the robot visualiser map
-
-map = createMap()
-
-%% Random Start Function
-
-test = 1    % set test =0 for random start, =1 for fixed
-[msv_start, goal] = randomStart(test);
-
+addpath("./.fn/");
+modeSel("pid-rl");
+map = createMap();
+test = 1;
+[msv_start, goal] = randomStart(test); % set test =0 for random start, =1 for fixed
 kpid = [ 2 ; 0 ; 0 ];
 
+% Comment blocks and set switch for RL parameter input
+set_param('msv_rl/Controller/captainPID-RL/Reward_Function','Commented','on');
+set_param('msv_rl/Controller/captainPID-RL/RL_agent','Commented','on');
+set_param('msv_rl/Controller/captainPID-RL/PID-PARMS', 'sw', '1');
+set_param('msv_rl/Controller/captainPID-RL/pid-ex-vals','Commented','on');
+close all;
+allData = [];
+
+kp = 0 :1: 30   ; kp(1) = 0.2;
+ki = 0 :1: 5    ; ki(1) = 0.2;
+kd = 0 :1: 5    ; kd(1) = 0.05;
+
+runs = size(kp,2)*size(ki,2)*size(kd,2);
+
+disp("Total Runs = " + runs)
+disp("Starting...")
+input("Press ""Enter"" to BEGIN  | ""Ctrl + C"" to QUIT")
+
+set_param("msv_rl","FastRestart","on");
+
+for p = 1:size(kp,2)
+for i = 1:size(ki,2)
+for d = 1:size(kd,2)
+
+    kpid    = [kp(p) ; ki(i) ; kd(d)];
+    out     = sim("msv_rl.slx");
+    allData = [allData ; out];
+
+    disp(kpid);
+
+end
+end
+end
+
+set_param("msv_rl","FastRestart","off");
+clearvars kp ki kd p i d runs
+
+
+%%
+save("data/pid_sweep.mat", "allData");
+
+
+
+
+
+
+
+
+%% Sectuib 2 - Reinforcement Learning Train
+%{
+.______       __      
+|   _  \     |  |     
+|  |_)  |    |  |     
+|      /     |  |     
+|  |\  \----.|  `----.
+| _| `._____||_______|          
+%}
+
+%% Setup Simulation
+open("msv_rl.slx");
+addpath("./.fn/");
+modeSel("pid-rl");
+map = createMap();
+test = 1;
+% Uncoment blocks and set switch for RL parameter input
+set_param('msv_rl/Controller/captainPID-RL/Reward_Function','Commented','off');
+set_param('msv_rl/Controller/captainPID-RL/RL_agent','Commented','off');
+set_param('msv_rl/Controller/captainPID-RL/pid-ex-vals','Commented','on');
+set_param('msv_rl/Controller/captainPID-RL/PID-PARMS', 'sw', '0');
+
 %% SETUP ENVIRONMENT
+
+
+
+
 
 % observations
 % error         [ ex    ey      eyaw]
@@ -40,11 +109,11 @@ obsInfo.Name = "Observations";
 
 actInfo             = rlNumericSpec([2 1]);
 actInfo.Name        = "Actions";
-actInfo.LowerLimit  = -100  ;
-actInfo.UpperLimit  =  100    ;
+actInfo.LowerLimit  = 0.1  ;
+actInfo.UpperLimit  = 50   ;
 
 % setup simulation environment for RL
-env     = rlSimulinkEnv( "msv_rl", "msv_rl/Controller/RLagent", obsInfo, actInfo ) ;
+env     = rlSimulinkEnv( "msv_rl", "msv_rl/Controller/captainPID-RL/RL_agent", obsInfo, actInfo ) ;
 
 %env.ResetFcn = @rlReset;
 
@@ -60,8 +129,8 @@ env     = rlSimulinkEnv( "msv_rl", "msv_rl/Controller/RLagent", obsInfo, actInfo
 
 %% TD3 agent
 
-agent = rlTD3Agent(obsInfo,actInfo)
-%agent.AgentOptions.SampleTime = 10;
+agent = rlTD3Agent(obsInfo,actInfo);
+agent.AgentOptions.SampleTime = 0.1;
 agent.UseExplorationPolicy = true;
 %agent.AgentOptions.DiscountFactor = 0.80;
 
@@ -70,10 +139,10 @@ agent.UseExplorationPolicy = true;
 
 opts                        = rlTrainingOptions;
 opts.Verbose                = true;
-opts.MaxEpisodes            = 20000;
+opts.MaxEpisodes            = 200;
 opts.StopTrainingCriteria   = "EpisodeCount";
 opts.StopTrainingValue      = opts.MaxEpisodes;
-opts.MaxStepsPerEpisode     = 1;
+opts.MaxStepsPerEpisode     = 20*10;
 opts.StopOnError            = 'off';
 
 info    = train(agent, env, opts);
@@ -141,25 +210,25 @@ title("Tracking Reward")
 xlabel("ROV - Trajectory Seperation (m)")
 ylabel("Reward (step)")
 
-% figure(Visible="off");
-% ax2 = gca;
-% x = 0:1:5000;
-% y = 1 ./ (1 + exp(-0.01 * (x - 3000))); % <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-% plot(x,y, LineWidth=2, DisplayName="Control Penalty", Color='red');
-% title("Control Penalty");
-% xlabel("Control Value")
-% ylabel("Penalty (step)")
+figure(Visible="off");
+ax2 = gca;
+x = 0:1:5000;
+y = 1 ./ (1 + exp(-0.01 * (x - 3000))); % <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+plot(x,y, LineWidth=2, DisplayName="Control Penalty", Color='red');
+title("Control Penalty");
+xlabel("Control Value")
+ylabel("Penalty (step)")
 
 
-% fig3 = figure();
-% tcl=tiledlayout(2,1);
-% ax1.Parent=tcl;
-% ax1.Layout.Tile=1;
-% ax2.Parent=tcl;
-% ax2.Layout.Tile=2;
+fig3 = figure();
+tcl=tiledlayout(2,1);
+ax1.Parent=tcl;
+ax1.Layout.Tile=1;
+ax2.Parent=tcl;
+ax2.Layout.Tile=2;
 
-% title(tcl, "Parameter Training Reward Functions");
-% subtitle(tcl, "Reward per timestep (10ms)")
+title(tcl, "Parameter Training Reward Functions");
+subtitle(tcl, "Reward per timestep (10ms)")
 
 
 
